@@ -1,0 +1,107 @@
+caltech101:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 101
+  num_channels: 3
+
+flowers102:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 102
+  num_channels: 3
+
+food101:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 101
+  num_channels: 3
+
+oxfordiiitpet:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 37
+  num_channels: 3
+
+stanfordcars:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 196
+  num_channels: 3
+
+stl10:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 10
+  num_channels: 3
+
+imagenet:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 1000
+  num_channels: 3
+
+imagenet16:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 16
+  num_channels: 3
+
+bloodmnist:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 8
+  num_channels: 3
+
+retinamnist:
+  task: ordinal_regression
+  root_path: ./dataset/tomburgert
+  num_classes: 5
+  num_channels: 3
+
+chestmnist:
+  task: binary_classification
+  root_path: ./dataset/tomburgert
+  num_classes: 1
+  num_channels: 3
+
+pathmnist:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 9
+  num_channels: 3
+
+dermamnist:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 7
+  num_channels: 3
+
+rsd46whu:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 46
+  num_channels: 3
+
+aid:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 30
+  num_channels: 3
+
+ucmerced:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 21
+  num_channels: 3
+
+patternnet:
+  task: single_label
+  root_path: ./dataset/tomburgert
+  num_classes: 38
+  num_channels: 3
+
+deepglobe:
+  task: multi_label
+  root_path: ./dataset/tomburgert
+  num_classes: 6
+  num_channels: 3

@@ -20,7 +20,14 @@ This repository builds on the official implementation of Burgert et al. and exte
 
 Both contributions use the paper's suppression operations (patch shuffle, bilateral filter, grayscale) as their foundation and evaluate using the paper's reliance measurement framework.
 
----
+## Replication & Execution
+
+More information on running the code and replicating results for each contribution is provided in the specific **README** files located within their respective directories:
+
+* **Contribution 1:** `contributions/1_contribution/README.md`
+* **Contribution 2:** `contributions/2_contribution/README.md`
+
+Each folder-level README contains the necessary environment specifications, dependency requirements, and command-line instructions unique to that portion of the project.
 
 ## Key results
 
@@ -49,20 +56,11 @@ Clean accuracy cost: **−2.02pp** (84.84% → 82.82%).
 
 | Domain | Dataset | Best training strategy | Baseline acc | Shape-removed | Texture-removed | Color-removed |
 |---|---|---|---|---|---|---|
-| Computer Vision | STL10 | Shape-optimized (texture removed) | 0.9690 | 0.7932 | 0.9770 | 0.9438 |
+| Computer Vision | STL10 | Shape-removed training | 0.9760 | 0.9354 | 0.9531 | 0.9538 |
 | Medical | BloodMNIST | Shape + color augmentation | 0.9872 | 0.9705 | 0.9230 | 0.9790 |
 | Remote Sensing | DeepGlobe | Texture + color augmentation | 0.8539 | 0.8320 | 0.8483 | 0.8413 |
 
 ---
-
-## Replication & Execution
-
-More information on running the code and replicating results for each contribution is provided in the specific **README** files located within their respective directories:
-
-* **Contribution 1:** `contributions/1_contribution/README.md`
-* **Contribution 2:** `contributions/2_contribution/README.md`
-
-Each folder-level README contains the necessary environment specifications, dependency requirements, and command-line instructions unique to that portion of the project.
 
 ## Data preparation
 
