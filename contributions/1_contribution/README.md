@@ -1,121 +1,220 @@
-# Feature Reliance: Measurement, Control, and Cross-Domain Analysis
 
-**Extension of:** *"ImageNet-trained CNNs are not biased towards texture: Revisiting feature reliance through controlled suppression"* — Tom Burgert, Oliver Stoll, Paolo Rota, Begüm Demir @ NeurIPS 2025 (Oral)
-
-[![arXiv](https://img.shields.io/badge/arXiv-2509.20234-b31b1b.svg)](https://arxiv.org/abs/2509.20234)
-[![Original Repo](https://img.shields.io/badge/Original%20Repo-tomburgert%2Ffeature--reliance-blue)](https://github.com/tomburgert/feature-reliance)
-
-**Course:** CSL4020 Deep Learning — Project (2026) 
+# A. Feature-Aware Training Curriculum
 
 ---
 
-## What this repo contains
+## Overview
 
-This repository builds on the official implementation of Burgert et al. and extends it in two directions as part of a course project. The base paper proposes a controlled suppression framework to *measure* CNN feature reliance — it does not propose any mechanism to change or control that reliance. We address this gap along two independent axes:
+Burgert et al. introduce a controlled suppression framework that *measures* CNN feature reliance across shape, texture, and color cues. Their paper is a measurement contribution — it does not propose any mechanism to change what a model relies on.
 
-| Contribution | What |
-|---|---|
-| **A. Feature-Aware Training Curriculum** | Training-time intervention that actively reduces feature reliance using a dynamic suppression schedule |
-| **B. Cross-Domain CLIP Similarity & Robust Fine-tuning** | Extends the measurement framework to CLIP embedding space and cross-domain robust training across CV, medical, and remote sensing domains |
+This contribution reframes that as a control problem:
 
-Both contributions use the paper's suppression operations (patch shuffle, bilateral filter, grayscale) as their foundation and evaluate using the paper's reliance measurement framework.
+> **If feature reliance is measurable, can it be actively reduced through training?**
 
----
+We propose a **Feature-Aware Training Curriculum** that dynamically mixes clean and feature-suppressed images during training, using the same suppression operations the paper uses for evaluation. The curriculum progressively increases suppression pressure as training advances, forcing the model to learn representations that do not depend on any single feature cue.
 
-## Key results
+Evaluated on CIFAR-10 with ResNet-18 and assessed using the paper's own reliance framework:
 
-### Contribution A — Feature-Aware Training Curriculum (CIFAR-10, ResNet-18)
-
-| Feature | Standard reliance | Curriculum reliance | Δ |
-|---|---|---|---|
-| Local shape | 0.6191 | 0.4064 | **↓ 0.2127** |
-| Global shape | 0.5236 | 0.4147 | **↓ 0.1089** |
-| Texture | 0.2601 | 0.0503 | **↓ 0.2098** |
-| Color | 0.0944 | 0.0394 | **↓ 0.0550** |
+| Feature       | Standard reliance | Curriculum reliance | Δ            |
+|---------------|------------------|---------------------|--------------|
+| Local shape   | 0.6191           | 0.4064              | ↓ 0.2127     |
+| Global shape  | 0.5236           | 0.4147              | ↓ 0.1089     |
+| Texture       | 0.2601           | 0.0503              | ↓ 0.2098     |
+| Color         | 0.0944           | 0.0394              | ↓ 0.0550     |
 
 Clean accuracy cost: **−2.02pp** (84.84% → 82.82%).
 
-### Contribution B — Cross-Domain Robust Training
+---
 
-**CLIP prompt engineering on MS-COCO** (200 samples, pretrained ViT-B/32):
+## Repository Structure
 
-| Label mode | clip_basic | shape | texture | color | base_caption |
-|---|---|---|---|---|---|
-| caption | 0.3018 | 0.2850 | 0.2881 | 0.2919 | 0.3037 |
-| noun | 0.2107 | 0.1780 | 0.1748 | 0.1851 | 0.3037 |
-| short | 0.2607 | 0.2316 | 0.2303 | 0.2389 | 0.3037 |
+```
 
-**Best robust models per domain** (test accuracy / AP under all suppression conditions):
+contribution/
+├── suppression_utils.py       # Tensor-native suppression operations
+│                              # (patch shuffle, bilateral filter, grayscale)
+├── curriculum_dataset.py      # CurriculumDataset with dynamic schedule
+├── train.py                   # Training loop for standard and curriculum modes
+├── gradcam_viz.py             # Grad-CAM visualization (standard vs curriculum)
+├── logs/
+│   └── reliance_comparison.json   # Full evaluation results
+└── models/
+├── standard.pt            # Trained standard ResNet-18 checkpoint
+└── curriculum.pt          # Trained curriculum ResNet-18 checkpoint
 
-| Domain | Dataset | Best training strategy | Baseline acc | Shape-removed | Texture-removed | Color-removed |
-|---|---|---|---|---|---|---|
-| Computer Vision | STL10 | Shape-optimized (texture removed) | 0.9690 | 0.7932 | 0.9770 | 0.9438 |
-| Medical | BloodMNIST | Shape + color augmentation | 0.9872 | 0.9705 | 0.9230 | 0.9790 |
-| Remote Sensing | DeepGlobe | Texture + color augmentation | 0.8539 | 0.8320 | 0.8483 | 0.8413 |
+data/
+└── cifar-10-batches-py/       # CIFAR-10 dataset (auto-downloaded if absent)
+
+feature-aware-training-curriculum.ipynb   # Full Kaggle notebook (end-to-end)
+
+```
 
 ---
 
-## Replication & Execution
+## How It Works
 
-More information on running the code and replicating results for each contribution is provided in the specific **README** files located within their respective directories:
+### Suppression Operations
 
-* **Contribution 1:** `contributions/1_contribution/README.md`
-* **Contribution 2:** `contributions/2_contribution/README.md`
+Three suppression modes are implemented in `suppression_utils.py`, adapted from the paper's `transforms.py` as tensor-native operations compatible with PyTorch's CIFAR-10 pipeline:
 
-Each folder-level README contains the necessary environment specifications, dependency requirements, and command-line instructions unique to that portion of the project.
+| Mode      | Operation                               | What it destroys            |
+|-----------|------------------------------------------|-----------------------------|
+| `shape`   | Patch shuffle (`grid_size = 6`)           | Local spatial structure     |
+| `texture` | Bilateral filter (`d = 11`, `σ_c = 170`)  | Surface texture detail      |
+| `color`   | Grayscale conversion                     | Color information           |
 
-## Data preparation
-
-### Contribution A
-CIFAR-10 downloads automatically via `torchvision.datasets`. No setup needed.
-
-### Contribution B + base paper
-
-**Computer Vision:** Caltech101, Flowers102, OxfordPet, STL10 download automatically via `torchvision.datasets`. ImageNet requires the official ILSVRC 2012 split.
-
-**Medical:** BloodMNIST, RetinaMNIST and other MedMNIST datasets are handled via the `medmnist` package included in `requirements.txt`.
-
-**Remote Sensing:**
-- DeepGlobe: [Kaggle link] — after download, run `scripts/preprocess_deepglobe.py`
-- RSD46-WHU: [Hugging Face link] — after download, run `scripts/preprocess_rsd46whu.py`
-- PatternNet: [Download here]
-- UCMerced: [Download here]
-- AID: [Hugging Face link]
+> **Note on parameters:** Bilateral filtering uses stronger parameters than the paper's default (`d = 5`, `σ_c = 75`) to compensate for CIFAR-10's 32×32 resolution, where weaker smoothing has negligible visible effect.
 
 ---
 
-## How the contributions relate to the base paper
+### Dynamic Curriculum Schedule
 
-| | Burgert et al. | Contribution A | Contribution B |
-|---|---|---|---|
-| Goal | Measure feature reliance | Control feature reliance | Generalize measurement + improve robustness |
-| Method | Suppression at test time | Suppression during training | CLIP similarity + domain-specific fine-tuning |
-| Signal | Accuracy drop | Accuracy drop (same metric) | CLIP cosine similarity + cross-domain accuracy |
-| Dataset | ImageNet, multi-domain | CIFAR-10 | MS-COCO, STL10, BloodMNIST, DeepGlobe |
-| Model | ResNet-50 | ResNet-18 | CLIP ViT-B/32, ResNet-50 |
-| Finding | CNNs rely on local shape | Curriculum reduces all reliance types | Domain bias confirmed; robust training strategies identified per domain |
+At the start of each epoch, the mixing probabilities update according to:
 
-**The base paper establishes that feature reliance is measurable. Contribution A shows it is controllable through training. Contribution B shows it generalizes across modalities and can be targeted through domain-specific augmentation.**
+```
+
+p_normal(t) = 0.70 - 0.60 × (t - 1) / (T - 1)   # 0.70 → 0.10
+p_shape     = p_texture = p_color = (1 - p_normal) / 3
+
+````
+
+| Epoch | Normal | Shape | Texture | Color |
+|-------|--------|--------|----------|--------|
+| 1     | 70%    | 10%    | 10%      | 10%    |
+| 15    | 40%    | 20%    | 20%      | 20%    |
+| 30    | 10%    | 30%    | 30%      | 30%    |
+
+The model starts on mostly clean images to learn the basic task, then is progressively forced to operate without individual feature cues. Because it never knows which version it receives, it cannot specialize and must learn feature-robust representations.
 
 ---
 
-## Design decisions (Contribution A)
+## Installation
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Architecture | ResNet-18 | Compute constraints (Kaggle T4); protocol is architecture-agnostic |
-| Dataset | CIFAR-10 | Well-benchmarked; enables fast iteration |
-| Suppression ops | One per feature type | Follows primary transform from Table 1 of Burgert et al. |
-| Bilateral params | d=11, σ_c=170 | Stronger suppression required at 32×32 resolution |
-| Schedule endpoints | 0.70 → 0.10 | Sufficient clean data early; maximum suppression pressure late |
+```bash
+# GPU (CUDA 11.8) — matches Kaggle T4/P100 environment
+pip install torch==2.3.1+cu118 torchvision==0.18.1+cu118 \
+    --index-url https://download.pytorch.org/whl/cu118
 
-The standard model's local shape reliance (0.6191, relative accuracy ≈ 0.27) matches the paper's ResNet-50 result on ImageNet (0.276), validating the baseline.
+pip install grad-cam opencv-python tqdm
+````
+
+CIFAR-10 downloads automatically on first run. No manual data preparation is required.
+
+---
+
+## Usage
+
+### Option 1 — Kaggle Notebook (Recommended)
+
+Open `feature-aware-training-curriculum.ipynb` in Kaggle with GPU accelerator enabled. Run all cells in order. The notebook covers installation, training both models, evaluation, and result logging end-to-end.
+
+---
+
+### Option 2 — Script
+
+```bash
+# Train standard model
+python contribution/train.py --mode standard --epochs 30 --batch_size 128
+
+# Train curriculum model
+python contribution/train.py --mode curriculum --epochs 30 --batch_size 128
+```
+
+Checkpoints are saved to `contribution/models/` by default.
+
+---
+
+### Evaluate Feature Reliance
+
+Run the evaluation cell in the notebook, or use the script below:
+
+```python
+import sys
+sys.path.append('contribution')
+
+from suppression_utils import apply_suppression
+import torch
+import torchvision.models as models
+import torchvision.transforms as T
+from torchvision.datasets import CIFAR10
+
+device = torch.device('cuda')
+
+def load_model(path):
+    m = models.resnet18(weights=None, num_classes=10).to(device)
+    ckpt = torch.load(path, map_location=device)
+    m.load_state_dict(ckpt['model_state_dict'])
+    m.eval()
+    return m
+
+std_model = load_model('contribution/models/standard.pt')
+cur_model = load_model('contribution/models/curriculum.pt')
+
+# Results print to console and save to contribution/logs/reliance_comparison.json
+```
+
+---
+
+## Results
+
+Full results are saved in:
+
+```
+contribution/logs/reliance_comparison.json
+```
+
+Example output:
+
+```json
+{
+  "accuracy": {
+    "original":     { "standard": 0.8484, "curriculum": 0.8282 },
+    "local_shape":  { "standard": 0.2293, "curriculum": 0.4218 },
+    "global_shape": { "standard": 0.3248, "curriculum": 0.4135 },
+    "texture":      { "standard": 0.5883, "curriculum": 0.7779 },
+    "color":        { "standard": 0.7540, "curriculum": 0.7888 }
+  },
+  "reliance": {
+    "local_shape":  { "standard": 0.6191, "curriculum": 0.4064 },
+    "global_shape": { "standard": 0.5236, "curriculum": 0.4147 },
+    "texture":      { "standard": 0.2601, "curriculum": 0.0503 },
+    "color":        { "standard": 0.0944, "curriculum": 0.0394 }
+  }
+}
+```
+
+---
+
+## Design Decisions and Scope
+
+| Decision           | What we did       | Why                                                                   |
+| ------------------ | ----------------- | --------------------------------------------------------------------- |
+| Architecture       | ResNet-18         | Compute constraints (Kaggle T4); protocol is architecture-agnostic    |
+| Dataset            | CIFAR-10          | Accessible, well-benchmarked; allows fast iteration                   |
+| Suppression ops    | One per feature   | Follows primary transform from each pair in Table 1 of Burgert et al. |
+| Bilateral params   | d = 11, σ_c = 170 | Stronger suppression needed at 32×32 resolution                       |
+| Schedule endpoints | 0.70 → 0.10       | Ensures sufficient clean data early; strong suppression late          |
+
+The standard model's local shape reliance (0.6191, relative accuracy ≈ 0.27) matches the paper's ResNet-50 result on ImageNet (0.276), validating that our baseline behaves as expected despite the architecture and dataset difference.
+
+---
+
+## Relation to Base Paper
+
+|         | Burgert et al.           | This contribution               |
+| ------- | ------------------------ | ------------------------------- |
+| Goal    | Measure feature reliance | Control feature reliance        |
+| Method  | Suppression at test time | Suppression during training     |
+| Signal  | Accuracy drop            | Accuracy drop (same metric)     |
+| Finding | CNNs rely on local shape | Curriculum reduces all reliance |
+
+The evaluation uses the paper's own measurement framework applied to both models, ensuring direct comparability.
 
 ---
 
 ## Citation
 
-If you use this code, please cite the base paper:
+If you use this curriculum extension, please also cite the base paper:
 
 ```bibtex
 @misc{burgert2025featurereliance,
@@ -129,12 +228,4 @@ If you use this code, please cite the base paper:
 }
 ```
 
-```bibtex
-@InProceedings{DeepGlobe18,
-  author    = {Demir, Ilke and Koperski, Krzysztof and Lindenbaum, David and Pang, Guan
-               and Huang, Jing and Basu, Saikat and Hughes, Forest and Tuia, Devis and Raskar, Ramesh},
-  title     = {DeepGlobe 2018: A Challenge to Parse the Earth Through Satellite Images},
-  booktitle = {CVPR Workshops},
-  year      = {2018}
-}
-```
+`
