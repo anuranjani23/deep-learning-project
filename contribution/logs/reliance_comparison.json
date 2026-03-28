@@ -1,0 +1,46 @@
+{
+  "accuracy": {
+    "original": {
+      "standard": 0.8484,
+      "curriculum": 0.8282
+    },
+    "local_shape": {
+      "standard": 0.2293,
+      "curriculum": 0.4218
+    },
+    "global_shape": {
+      "standard": 0.3248,
+      "curriculum": 0.4135
+    },
+    "texture": {
+      "standard": 0.5883,
+      "curriculum": 0.7779
+    },
+    "color": {
+      "standard": 0.754,
+      "curriculum": 0.7888
+    }
+  },
+  "reliance": {
+    "local_shape": {
+      "standard": 0.6191,
+      "curriculum": 0.4064
+    },
+    "global_shape": {
+      "standard": 0.5236,
+      "curriculum": 0.4147
+    },
+    "texture": {
+      "standard": 0.2601,
+      "curriculum": 0.0503
+    },
+    "color": {
+      "standard": 0.0944,
+      "curriculum": 0.0394
+    }
+  },
+  "baseline_accs": {
+    "standard_original": 0.8484,
+    "curriculum_original": 0.8282
+  }
+}
